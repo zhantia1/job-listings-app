@@ -119,39 +119,51 @@ jobs:
           git filter-branch -- --all
           git push heroku main
 
-  deploy_frontend_server:
+  #   deploy_frontend_server:
+  #     runs-on: ubuntu-latest
+  #     steps:
+  #       - name: Checkout code
+  #         uses: actions/checkout@v2
+
+  #       - name: Set up Node.js
+  #         uses: actions/setup-node@v2
+  #         with:
+  #           node-version: "14"
+
+  #       - name: Install dependencies
+  #         run: npm install --prefix applications/frontend-server
+
+  #       - name: Install Heroku CLI
+  #         run: curl https://cli-assets.heroku.com/install.sh | sh
+
+  #       - name: Heroku login credentials
+  #         run: |
+  #           cat > ~/.netrc <<EOF
+  #             machine api.heroku.com
+  #               login $HEROKU_EMAIL
+  #               password $HEROKU_API_KEY
+  #             machine git.heroku.com
+  #               login $HEROKU_EMAIL
+  #               password $HEROKU_API_KEY
+  #           EOF
+  #         env:
+  #           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+  #           HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+
+  #       - name: Deploy to Heroku
+  #         run: |
+  #           heroku git:remote -a frontend-server-app
+  #           git filter-branch -- --all
+  #           git push heroku main
+
+  heroku-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: "14"
-
-      - name: Install dependencies
-        run: npm install --prefix applications/frontend-server
-
-      - name: Install Heroku CLI
-        run: curl https://cli-assets.heroku.com/install.sh | sh
-
-      - name: Heroku login credentials
-        run: |
-          cat > ~/.netrc <<EOF
-            machine api.heroku.com
-              login $HEROKU_EMAIL
-              password $HEROKU_API_KEY
-            machine git.heroku.com
-              login $HEROKU_EMAIL
-              password $HEROKU_API_KEY
-          EOF
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
-
+      - name: Check out repository
+        uses: actions/checkout@v3
       - name: Deploy to Heroku
-        run: |
-          heroku git:remote -a frontend-server-app
-          git filter-branch -- --all
-          git push heroku main
+        uses: akhileshns/heroku-deploy@v3.12.12
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: frontend-server-app
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
