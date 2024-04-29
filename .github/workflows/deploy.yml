@@ -151,4 +151,5 @@ jobs:
       - name: Deploy to Heroku
         run: |
           heroku git:remote -a frontend-server-app
+          git filter-branch -- --all
           git push heroku main
