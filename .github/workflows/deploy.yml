@@ -60,7 +60,9 @@ jobs:
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Login to Heroku
-        run: echo "${{ secrets.HEROKU_API_KEY }}" | heroku login --interactive
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: echo $HEROKU_API_KEY | base64 --decode | tr -d '\n' | heroku login
 
       - name: Deploy to Heroku
         run: |
@@ -88,7 +90,9 @@ jobs:
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Login to Heroku
-        run: echo "${{ secrets.HEROKU_API_KEY }}" | heroku login --interactive
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: echo $HEROKU_API_KEY | base64 --decode | tr -d '\n' | heroku login
 
       - name: Deploy to Heroku
         run: |
@@ -113,7 +117,9 @@ jobs:
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Login to Heroku
-        run: echo "${{ secrets.HEROKU_API_KEY }}" | heroku login --interactive
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: echo $HEROKU_API_KEY | base64 --decode | tr -d '\n' | heroku login
 
       - name: Deploy to Heroku
         run: |
