@@ -124,6 +124,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
+      - name: Try a commit
+        run: git config user.email "USER EMAIL" && git config user.name "USER NAME" && git add -A && git commit -m "Updated code"
       - name: Deploy to Heroku
         uses: akhileshns/heroku-deploy@v3.12.12
         with:
