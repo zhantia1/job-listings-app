@@ -4,25 +4,29 @@ const axios = require('axios');
 const mysql = require('mysql2');
 const url = require('url');
 
+const env = process.env.ENVIRONMENT || "dev";
+
 // DATABASE CODE ---------------------------------------------------------
 
-// prod
-const dbUrl = url.parse(process.env.DATABASE_URL);
+let pool = undefined;
+if (env === "prod") {
+    const dbUrl = url.parse(process.env.DATABASE_URL);
 
-const pool = mysql.createPool({
-    host: dbUrl.hostname,
-    user: dbUrl.auth.split(':')[0],
-    password: dbUrl.auth.split(':')[1],
-    database: dbUrl.pathname.substring(1)
-});
+    pool = mysql.createPool({
+        host: dbUrl.hostname,
+        user: dbUrl.auth.split(':')[0],
+        password: dbUrl.auth.split(':')[1],
+        database: dbUrl.pathname.substring(1)
+    });
+} else {
+    pool = mysql.createPool({
+        host: 'localhost',
+        user: 'root',
+        password: `${process.env.DB_PASSWORD}`,
+        database: 'project_database'
+    });
+}
 
-// local dev
-// const pool = mysql.createPool({
-//     host: 'localhost',
-//     user: 'root',
-//     password: `${process.env.DB_PASSWORD}`,
-//     database: 'project_database'
-// });
 
 // Promisify for Node.js async/await.
 const promisePool = pool.promise();
@@ -252,10 +256,21 @@ app.get('/collect-data', async (req, res) => {
     }
 });
 
+app.get('/health-check', (req, res) => {
+    res.status(200).json({ status: 'OK' });
+});
+
 initializeDatabase().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
-    });
+    if (env !== "test") {
+        app.listen(PORT, () => {
+            console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
+        });
+    }
 }).catch(error => {
     console.error('Server startup failed:', error);
 });
+
+module.exports = {
+    app,
+    pool
+};

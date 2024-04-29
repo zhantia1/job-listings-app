@@ -3,25 +3,28 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const url = require('url');
 
+const env = process.env.ENVIRONMENT || "dev";
+
 // DATABASE CODE ---------------------------------------------------------
 
-// prod
-const dbUrl = url.parse(process.env.DATABASE_URL);
+let pool = undefined;
+if (env === "prod") {
+    const dbUrl = url.parse(process.env.DATABASE_URL);
+    pool = mysql.createPool({
+        host: dbUrl.hostname,
+        user: dbUrl.auth.split(':')[0],
+        password: dbUrl.auth.split(':')[1],
+        database: dbUrl.pathname.substring(1)
+    });
 
-const pool = mysql.createPool({
-    host: dbUrl.hostname,
-    user: dbUrl.auth.split(':')[0],
-    password: dbUrl.auth.split(':')[1],
-    database: dbUrl.pathname.substring(1)
-});
-
-// dev
-// const pool = mysql.createPool({
-//     host: 'localhost',
-//     user: 'root',
-//     password: `${process.env.DB_PASSWORD}`,
-//     database: 'project_database'
-// });
+} else {
+    pool = mysql.createPool({
+        host: 'localhost',
+        user: 'root',
+        password: `${process.env.DB_PASSWORD}`,
+        database: 'project_database'
+    });
+}
 
 async function insertProcessedData(job) {
     const query = `
@@ -130,6 +133,14 @@ app.get('/process-data', async (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
-    console.log(`Data-Analyzer-Server running on http://localhost:${PORT}`);
-});
+
+if (env !== "test") {
+    app.listen(PORT, () => {
+        console.log(`Data-Analyzer-Server running on http://localhost:${PORT}`);
+    });
+}
+
+module.exports = {
+    app,
+    filterJobs
+};
