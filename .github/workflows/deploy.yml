@@ -56,6 +56,9 @@ jobs:
       - name: Install dependencies
         run: npm install --prefix applications/data-collector-server
 
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+
       - name: Login to Heroku
         run: heroku login -i
 
@@ -80,6 +83,9 @@ jobs:
       - name: Install dependencies
         run: npm install --prefix applications/data-analyzer-server
 
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+
       - name: Login to Heroku
         run: heroku login -i
 
@@ -100,6 +106,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install --prefix applications/frontend-server
+
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Login to Heroku
         run: heroku login -i
