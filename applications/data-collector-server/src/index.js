@@ -2,15 +2,27 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const mysql = require('mysql2');
+const url = require('url');
 
 // DATABASE CODE ---------------------------------------------------------
 
+// prod
+const dbUrl = url.parse(process.env.DATABASE_URL);
+
 const pool = mysql.createPool({
-    host: 'localhost',  // or the IP of your Docker host if running remotely
-    user: 'root',
-    password: `${process.env.DB_PASSWORD}`,
-    database: 'project_database'
+    host: dbUrl.hostname,
+    user: dbUrl.auth.split(':')[0],
+    password: dbUrl.auth.split(':')[1],
+    database: dbUrl.pathname.substring(1)
 });
+
+// local dev
+// const pool = mysql.createPool({
+//     host: 'localhost',
+//     user: 'root',
+//     password: `${process.env.DB_PASSWORD}`,
+//     database: 'project_database'
+// });
 
 // Promisify for Node.js async/await.
 const promisePool = pool.promise();

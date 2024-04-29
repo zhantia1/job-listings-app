@@ -1,0 +1,71 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy_frontend_server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Login to Heroku
+        run: heroku login -i
+
+      - name: Deploy to Heroku
+        run: |
+          heroku git:remote -a YOUR_FRONTEND_SERVER_APP_NAME
+          git push heroku main
+
+  deploy_data_analyzer_server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Second Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Login to Heroku
+        run: heroku login -i
+
+      - name: Deploy to Heroku
+        run: |
+          heroku git:remote -a YOUR_FRONTEND_SERVER_APP_NAME
+
+  deploy_data_collector_server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Second Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Login to Heroku
+        run: heroku login -i
+
+      - name: Deploy to Heroku
+        run: |
+          heroku git:remote -a YOUR_FRONTEND_SERVER_APP_NAME

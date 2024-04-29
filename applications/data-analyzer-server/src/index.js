@@ -1,18 +1,27 @@
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
-const app = express();
-const PORT = process.env.PORT || 3002;
+const url = require('url');
 
 // DATABASE CODE ---------------------------------------------------------
 
-// Database connection pool
+// prod
+const dbUrl = url.parse(process.env.DATABASE_URL);
+
 const pool = mysql.createPool({
-    host: 'localhost',  // or the IP of your Docker host if running remotely
-    user: 'root',
-    password: `${process.env.DB_PASSWORD}`,
-    database: 'project_database'
+    host: dbUrl.hostname,
+    user: dbUrl.auth.split(':')[0],
+    password: dbUrl.auth.split(':')[1],
+    database: dbUrl.pathname.substring(1)
 });
+
+// dev
+// const pool = mysql.createPool({
+//     host: 'localhost',
+//     user: 'root',
+//     password: `${process.env.DB_PASSWORD}`,
+//     database: 'project_database'
+// });
 
 async function insertProcessedData(job) {
     const query = `
@@ -102,8 +111,9 @@ const processEndpointTwo = async () => {
 }
 
 // SERVER CODE ---------------------------------------------------------
+const app = express();
+const PORT = process.env.PORT || 3002;
 
-// Middleware to parse JSON bodies
 app.use(express.json());
 
 // Route to start processing data
