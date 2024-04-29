@@ -119,7 +119,7 @@ jobs:
       - name: Login to Heroku
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: echo $HEROKU_API_KEY | base64 --decode | tr -d '\n' | heroku login
+        run: echo $HEROKU_API_KEY
 
       - name: Deploy to Heroku
         run: |
