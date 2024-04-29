@@ -17,7 +17,7 @@ if (env === "prod") {
         database: dbUrl.pathname.substring(1)
     });
 
-} else {
+} else if (env !== "test") {
     pool = mysql.createPool({
         host: 'localhost',
         user: 'root',
@@ -130,6 +130,10 @@ app.get('/process-data', async (req, res) => {
         console.error('Failed to process data:', error);
         res.status(500).json({ message: 'Failed to process data', error: error.message });
     }
+});
+
+app.get('/health-check', (req, res) => {
+    res.status(200).json({ status: 'OK' });
 });
 
 // Start the server

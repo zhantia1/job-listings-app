@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { app, pool }  = require('../../src/index');
+const { app }  = require('../../src/index');
 
 describe('Server Integration Test', () => {
   let server;
@@ -10,7 +10,6 @@ describe('Server Integration Test', () => {
 
   afterAll(async () => {
     await new Promise(resolve => server.close(resolve)); // Close the server
-    await new Promise(resolve => pool.end(resolve)); // Close the MySQL connection pool
   });
 
   it('responds with 200 status', async () => {

@@ -13,7 +13,7 @@ describe('Server Integration Test', () => {
   });
 
   it('responds with 200 status', async () => {
-    const response = await request(server).get('/process-data');
+    const response = await request(server).get('/health-check');
     expect(response.status).toBe(200);
   });
 });

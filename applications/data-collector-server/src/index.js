@@ -18,7 +18,7 @@ if (env === "prod") {
         password: dbUrl.auth.split(':')[1],
         database: dbUrl.pathname.substring(1)
     });
-} else {
+} else if (env !== "test") {
     pool = mysql.createPool({
         host: 'localhost',
         user: 'root',
@@ -29,7 +29,11 @@ if (env === "prod") {
 
 
 // Promisify for Node.js async/await.
-const promisePool = pool.promise();
+let promisePool = undefined;
+if (env !== "test") {
+    promisePool = pool.promise();
+}
+
 
 async function initializeDatabase() {
     const createJobOneTableSql = `
@@ -260,17 +264,16 @@ app.get('/health-check', (req, res) => {
     res.status(200).json({ status: 'OK' });
 });
 
-initializeDatabase().then(() => {
-    if (env !== "test") {
+if (env !== "test") {
+    initializeDatabase().then(() => {
         app.listen(PORT, () => {
             console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
         });
-    }
-}).catch(error => {
-    console.error('Server startup failed:', error);
-});
+    }).catch(error => {
+        console.error('Server startup failed:', error);
+    });
+}
 
 module.exports = {
     app,
-    pool
 };
