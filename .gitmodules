@@ -1,0 +1,3 @@
+[submodule "applications/frontend-server"]
+	path = applications/frontend-server
+	url = https://github.com/zhantia1/job-listings-app-frontend-server
