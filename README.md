@@ -1,5 +1,5 @@
 cd into each of the directories within `/applications` and run `npm start` to start that service
 
-`data-collector-server` initializes all the tables for the database
+cd into each of the directories within `/applications` and run `npm start` to test that service
 
-using a monorepo.
+`data-collector-server` initializes all the tables for the database
