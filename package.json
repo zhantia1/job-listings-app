@@ -1,0 +1,10 @@
+{
+    "name": "my-monorepo",
+    "version": "1.0.0",
+    "private": true,
+    "heroku": {
+      "frontend-server-app": "applications/frontend-server",
+      "data-analyzer-server-app": "applications/data-analyzer-server",
+      "data-collector-server-app": "applications/data-collector-server"
+    }
+  }
