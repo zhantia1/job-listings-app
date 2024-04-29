@@ -65,6 +65,7 @@ jobs:
       - name: Deploy to Heroku
         run: |
           heroku git:remote -a data-collector-server-app
+          git push heroku main
 
   deploy_data_analyzer_server:
     needs: test_data_analyzer_server
@@ -92,6 +93,7 @@ jobs:
       - name: Deploy to Heroku
         run: |
           heroku git:remote -a data-analyzer-server-app
+          git push heroku main
 
   deploy_frontend_server:
     runs-on: ubuntu-latest
