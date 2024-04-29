@@ -2,7 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const mysql = require('mysql2');
+const cors = require('cors');
 const url = require('url');
+const amqp = require('amqplib');
+const { register, collectDefaultMetrics } = require('prom-client');
 
 const env = process.env.ENVIRONMENT || "dev";
 
@@ -18,18 +21,28 @@ if (env === "prod") {
         password: dbUrl.auth.split(':')[1],
         database: dbUrl.pathname.substring(1)
     });
-} else if (env !== "test") {
+
+    // collect prometheus default metrics
+    collectDefaultMetrics();
+} else if (env === "dev") {
     pool = mysql.createPool({
         host: 'localhost',
         user: 'root',
         password: `${process.env.DB_PASSWORD}`,
         database: 'project_database'
     });
+} else if (env === "test-local") {
+    pool = mysql.createPool({
+        host: 'localhost',
+        user: 'root',
+        password: `${process.env.DB_PASSWORD}`,
+        database: 'test_database'
+    });
 }
-
+// env === test is for testing in github actions
 
 // Promisify for Node.js async/await.
-let promisePool = undefined;
+let promisePool
 if (env !== "test") {
     promisePool = pool.promise();
 }
@@ -82,7 +95,7 @@ async function initializeDatabase() {
             id VARCHAR(255) PRIMARY KEY NOT NULL,
             jobTitle VARCHAR(255),
             companyName VARCHAR(255),
-            location VARCHAR(100),
+            location VARCHAR(255),
             description TEXT,
             url VARCHAR(255) NOT NULL,
             date DATETIME
@@ -157,11 +170,6 @@ const processEndpointOne = async () => {
 }
 
 // ENDPOINT TWO ---------------------------------------------------------
-
-const APP_ID = process.env.APP_ID;
-const APP_KEY = process.env.APP_KEY;
-
-const JOB_ENDPOINT_TWO = `https://api.adzuna.com/v1/api/jobs/us/search/1?app_id=${APP_ID}&app_key=${APP_KEY}&results_per_page=50&what=remote&sort_by=date`;
 
 function convertDateString(inputDateStr) {
     // Create a new Date object using the input string
@@ -239,19 +247,87 @@ const processEndpointTwo = async () => {
     }
 }
 
+// RABBITMQ ---------------------------------------------------------
+
+async function connectAndSendMessage() {
+  const conn = await amqp.connect(process.env.CLOUDAMQP_URL);
+  const channel = await conn.createChannel();
+  const queue = 'collect_data_queue';
+
+  await channel.assertQueue(queue, { durable: true });
+
+  // Message to trigger data collection
+  const message = { task: 'collect-data' };
+  channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+    persistent: true
+  });
+
+  console.log("Scheduled data collection task sent to queue.");
+
+  await channel.close();
+  await conn.close();
+}
+
+// Set an interval to run every 12 hours
+setInterval(connectAndSendMessage, 12 * 60 * 60 * 1000);
+
+const collectData = async () => {
+    await processEndpointOne();
+    await processEndpointTwo();
+}
+
+async function startConsumer() {
+    const conn = await amqp.connect(process.env.CLOUDAMQP_URL);
+    const channel = await conn.createChannel();
+    const queue = 'collect_data_queue';
+    const processQueue = 'process_data_queue';
+
+    await channel.assertQueue(collectQueue, { durable: true });
+    await channel.assertQueue(processQueue, { durable: true });
+    console.log("Consumer waiting for messages in %s", queue);
+
+    channel.consume(queue, async (msg) => {
+        if (msg !== null) {
+            console.log("Received:", msg.content.toString());
+
+            try {
+                // directly call the function that handles /collect-data logic
+                await collectData();
+                console.log("Data collection initiated and processed.");
+
+                const message = { task: 'process-data' };
+                channel.sendToQueue(processQueue, Buffer.from(JSON.stringify(message)), {
+                  persistent: true
+                });
+
+            } catch (error) {
+                console.error("Error during data processing:", error);
+            }
+
+            // Acknowledge the message
+            channel.ack(msg);
+        }
+    });
+}
+
 // SERVER CODE ---------------------------------------------------------
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware to parse JSON bodies
 app.use(express.json());
+app.use(cors());
+
+// Set up Prometheus endpoint
+app.get('/metrics', (req, res) => {
+    res.set('Content-Type', register.contentType);
+    res.end(register.metrics());
+});
 
 // Route to collect data
 app.get('/collect-data', async (req, res) => {
     try {
-        await processEndpointOne();
-        await processEndpointTwo();
+        await collectData();
 
         res.status(200).json({ message: 'Data collected and saved successfully' });
     } catch (error) {
@@ -264,16 +340,56 @@ app.get('/health-check', (req, res) => {
     res.status(200).json({ status: 'OK' });
 });
 
+app.get('/api/jobs', (req, res) => {
+    const limit = 50;  // Default limit to 50 jobs per page
+    const page = parseInt(req.query.page) || 1;  // Default to first page
+    const offset = (page - 1) * limit;
+  
+    const query = 'SELECT * FROM processed_jobs LIMIT ?, ?';
+  
+    pool.query(query, [offset, limit], (error, results) => {
+      if (error) {
+        return res.status(500).json({ error });
+      }
+  
+      pool.query('SELECT COUNT(*) AS count FROM processed_jobs', (error, countResults) => {
+        if (error) {
+          return res.status(500).json({ error });
+        }
+  
+        const count = countResults[0].count;
+        const pageCount = Math.ceil(count / limit);
+  
+        res.json({
+          page,
+          pageCount,
+          jobs: results
+        });
+      });
+    });
+  });
+
 if (env !== "test") {
     initializeDatabase().then(() => {
         app.listen(PORT, () => {
             console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
+
+            startConsumer().then(() => {
+                console.log('RabbitMQ Consumer started successfully.');
+            }).catch(error => {
+                console.error('Failed to start RabbitMQ Consumer:', error);
+            });
         });
     }).catch(error => {
         console.error('Server startup failed:', error);
     });
 }
 
+
 module.exports = {
     app,
+    promisePool,
+    pool,
+    processEndpointOne,
+    processEndpointTwo,
 };

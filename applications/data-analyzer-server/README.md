@@ -6,10 +6,10 @@ In the project directory run the following commands:
 `npm start` to start up the server. The server will be started on port 3001 by default.
 
 
-Then make a GET request to the `/collect-data` endpoint with the following:
+Then make a GET request to the `/process-data` endpoint with the following:
 
 
-`curl http://localhost:3001/collect-data `
+`curl http://localhost:3002/process-data `
 
 
 This will fetch data from an external endpoint and write it into a job-listings table in the database.
@@ -28,7 +28,3 @@ const pool = mysql.createPool({
 ```
 
 To run prometheus: `cd` into the `/prometheus` folder and run `prometheus --config.file=prometheus.yml` command
-
-There are 2 suites of tests:
-`npm run test-local` to run integration tests that will create a real test database instance and test against that
-`npm test` to run tests that are run by Github Actions since Github Actions has no access to a db instance.
